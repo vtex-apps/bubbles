@@ -1,0 +1,206 @@
+@import '//io.vtex.com.br/fonts/fabriga/stylesheet.css';
+
+html,
+body,
+#render-container,
+#render-provider,
+.render-container,
+.render-provider,
+
+/* Fixes Safari position:fixed + z-index bug https://www.queness.com/code-snippet/16824/fix-mobile-safari-positionfixed-and-z-index-issue */
+.safari-positioning {
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+}
+
+.font-display,
+.font-body {
+  font-family: 'Fabriga', 'Helvetica Neue', 'Arial', sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-y: hidden;
+  background: #142032;
+}
+
+.container{
+	width: 100vw;
+  height: 100vh;
+	position: relative;
+}
+
+a[href^="http://maps.google.com/maps"]{display:none !important}
+a[href^="https://maps.google.com/maps"]{display:none !important}
+
+.gmnoprint a, .gmnoprint span, .gm-style-cc {
+    display:none;
+}
+
+.logovtex {
+  position: absolute;
+  z-index: 9999;
+  bottom: 10px;
+  left: 15px;
+  width: 320px;
+  opacity: .5;
+}
+
+.image {
+  position: absolute;
+  z-index: 1;
+  bottom: 20px;
+  right: 35px;
+}
+
+.clip-svg {
+  background-color: #fff;
+  width: 380px;
+  min-height: 380px;
+  height: auto;
+  border-radius: 20px;
+  padding: 8px;
+  /*border: 7px solid #F71963;*/
+}
+
+.label {
+  position: absolute;
+  bottom: 0;
+  width: 90%;
+  left: 5%;
+}
+
+.t { z-index: 9999; position: absolute; width: 200px; }
+
+
+@keyframes pulse {
+  0%{
+    transform: scale(0) translate3d(0,0,0);
+  }
+  3%{
+    transform: scale(0) translate3d(0,0,0);
+  }
+  100%{
+    transform: scale(1.0) translate3d(0,0,0);
+  }
+}
+
+@keyframes fade {
+  0%{
+    opacity: 0.7;
+  }
+  3%{
+    opacity: 0.7;
+  }
+  100%{
+    opacity: 0;
+  }
+}
+
+@keyframes shrink {
+  0%{
+    transform: scale(0) translate3d(0,0,0);
+  }
+  3%{
+    transform: scale(1) translate3d(0,0,0);
+  }
+  100%{
+    transform: scale(0) translate3d(0,0,0);
+  }
+}
+
+.Marker-point,
+.Marker-pulse {
+  background:#F71963;
+  border-radius:100%;
+  position:absolute;
+  width:30px;
+  height:30px;
+  top:-15px;
+  left:-15px;
+}
+.Marker-point {
+  width:16px;
+  height:16px;
+  top:-8px;
+  left:-8px;
+  /* animation: shrink cubic-bezier(0.000, 1.035, 0.220, 1.000) 20s both; */
+  animation: shrink ease-out 2.5s both;
+}
+.Marker-pulse {
+  width:200px;
+  height:200px;
+  top:-100px;
+  left:-100px;
+  animation: pulse cubic-bezier(0.165, 0.840, 0.440, 1.000) 2.5s both, fade cubic-bezier(0.000, 0.875, 0.375, 1.010) 2.5s both;
+}
+
+.x1 .Marker-pulse {
+  width:80px;
+  height:80px;
+  top:-40px;
+  left:-40px;
+}
+.x2 .Marker-pulse {
+  width:100px;
+  height:100px;
+  top:-50px;
+  left:-50px;
+}
+.x3 .Marker-pulse {
+  width:150px;
+  height:150px;
+  top:-75px;
+  left:-75px;
+}
+.x4 .Marker-pulse {
+  width:180px;
+  height:180px;
+  top:-90px;
+  left:-90px;
+}
+.x5 .Marker-pulse {
+  width:200px;
+  height:200px;
+  top:-100px;
+  left:-100px;
+}
+
+.x1 .Marker-point {
+  /* animation-duration: 2s; */
+}
+.x2 .Marker-point {
+  /* animation-duration: 5s; */
+}
+.x3 .Marker-point {
+  /* animation-duration: 10s; */
+}
+.x4 .Marker-point {
+  /* animation-duration: 20s; */
+}
+.x5 .Marker-point {
+  /* animation-duration: 20s; */
+}
+
+#overlay,
+#image-gallery,
+#map,
+#heatmap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 999;
+  pointer-events:none;
+}
+
+#heatmap{
+  opacity: 0.3;
+}
+
+#world-map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
