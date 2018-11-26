@@ -20,12 +20,14 @@ const start = () => {
   var queueImage = new Queue()
   var queueMarker = new Queue()
   var pendingMarkers = 0
-  var canvas = document.querySelector('#overlay')
-  var context = canvas.getContext('2d')
+  var pulseCanvas = document.querySelector('#overlay')
+  var pulseContext = pulseCanvas.getContext('2d')
+  var pulseResolution = 0.5
   var heatmapCanvas = document.querySelector('#heatmap')
   var heatmapContext = heatmapCanvas.getContext('2d')
   var galleryCanvas = document.querySelector('#image-gallery')
   var galleryContext = galleryCanvas.getContext('2d')
+  var galleryResolution = 0.75
   var mapCanvas = document.querySelector('#map')
   var mapContext = mapCanvas.getContext('2d')
   var dayMapURL = `${IMAGE_ROOT}/world-map-2.svg`
@@ -226,48 +228,62 @@ const start = () => {
   }
 
   function initCanvas() {
-    canvas.setAttribute('width',window.innerWidth)
-    canvas.setAttribute('height',window.innerHeight)
+    pulseCanvas.setAttribute('width',window.innerWidth*pulseResolution)
+    pulseCanvas.setAttribute('height',window.innerHeight*pulseResolution)
+    pulseCanvas.style.width = window.innerWidth+'px'
+    pulseCanvas.style.height = window.innerHeight+'px'
     heatmapCanvas.setAttribute('width',window.innerWidth)
     heatmapCanvas.setAttribute('height',window.innerHeight)
-    galleryCanvas.setAttribute('width',window.innerWidth)
-    galleryCanvas.setAttribute('height',window.innerHeight)
+    galleryCanvas.setAttribute('width',window.innerWidth*galleryResolution)
+    galleryCanvas.setAttribute('height',window.innerHeight*galleryResolution)
+    galleryCanvas.style.width = window.innerWidth+'px'
+    galleryCanvas.style.height = window.innerHeight+'px'
 
-    var markerSpeed = 0.002
+
+    var markerSpeed = 0.004
     var markerColor = '#F71963'
 
-    var imageSpeed = 0.003
+    var imageSpeed = 0.004
 
     function update() {
-      context.clearRect(0,0, window.innerWidth, window.innerHeight)
+      pulseContext.clearRect(0,0, window.innerWidth*pulseResolution, window.innerHeight*pulseResolution)
       markers.forEach(function(marker){
         if(marker.t < 1) {
-          context.fillStyle = markerColor
+          pulseContext.fillStyle = markerColor
 
-          context.globalAlpha = 1
-          context.beginPath()
-          context.arc(marker.x, marker.y, 6*Math.pow(1-marker.t,3), 0, 2*Math.PI)
-          context.fill()
+          pulseContext.globalAlpha = 1
+          pulseContext.beginPath()
+          pulseContext.arc(
+            marker.x*pulseResolution, marker.y*pulseResolution,
+            6*Math.pow(1-marker.t,3)*pulseResolution,
+            0, 2*Math.PI
+          )
+          pulseContext.fill()
 
           var pulseT = Math.min(1,marker.t*5)
+
           if(pulseT < 1) {
             var pulseScale = Math.log10(Math.max(1, marker.value/200))+1
             var initialPulseSize = 70*pulseScale
             var pulseSize = initialPulseSize*Math.pow(pulseT,1/2)
-            context.globalAlpha = Math.pow(1-pulseT,1/4)*0.4
-            context.lineWidth = pulseSize*2*Math.pow(1-pulseT, 8)
-            context.strokeStyle = markerColor
-            context.beginPath()
-            context.arc(marker.x, marker.y, pulseSize, 0, 2*Math.PI)
-            context.stroke()
+            pulseContext.globalAlpha = Math.pow(1-pulseT,1/4)*0.4
+            pulseContext.lineWidth = pulseSize*2*Math.pow(1-pulseT, 8)*pulseResolution
+            pulseContext.strokeStyle = markerColor
+            pulseContext.beginPath()
+            pulseContext.arc(
+              marker.x*pulseResolution, marker.y*pulseResolution,
+              pulseSize*pulseResolution,
+              0, 2*Math.PI
+            )
+            pulseContext.stroke()
           }
 
           marker.t += markerSpeed
         }
       })
 
-      galleryContext.clearRect(0, 0, window.innerWidth, window.innerHeight)
-      images.forEach(function(image) {
+      galleryContext.clearRect(0, 0, window.innerWidth*galleryResolution, window.innerHeight*galleryResolution)
+      images.forEach(function(image, i) {
         var offset = Math.pow(image.t, 1/3) * 350
         function easeOutElastic(t, b, c, d) {
           var s=1.10158; var p=0;var a=c;
@@ -298,25 +314,33 @@ const start = () => {
         // galleryContext.globalCompositeOperation = 'source-over'
         galleryContext.globalAlpha = 1
         galleryContext.beginPath()
-        galleryContext.arc(targetPos.x, targetPos.y, targetSize/2, 0, 2*Math.PI)
+        galleryContext.arc(
+          targetPos.x*galleryResolution, targetPos.y*galleryResolution,
+          (targetSize/2)*galleryResolution, 0, 2*Math.PI
+        )
         galleryContext.fill()
 
-        galleryContext.beginPath()
-        galleryContext.arc(targetPos.x, targetPos.y, targetSize/2, 0, 2*Math.PI)
+        // galleryContext.beginPath()
+        // galleryContext.arc(
+        //   targetPos.x*galleryResolution, targetPos.y*galleryResolution,
+        //   (targetSize/2)*galleryResolution, 0, 2*Math.PI
+        // )
         galleryContext.clip()
 
         // galleryContext.globalCompositeOperation = 'source-atop'
         galleryContext.drawImage(
           image.image,
-          targetPos.x - (targetSize/2),
-          targetPos.y - (targetSize/2),
-          targetSize,
-          targetSize
+          (targetPos.x - (targetSize/2))*galleryResolution,
+          (targetPos.y - (targetSize/2))*galleryResolution,
+          targetSize*galleryResolution,
+          targetSize*galleryResolution,
         )
 
         galleryContext.restore()
 
-        image.t += imageSpeed
+        var speedIncreaseFactor = 0.2
+        image.t += imageSpeed + (image.speedIncrease * speedIncreaseFactor)*Math.max(0, 1-image.t*4)
+        image.speedIncrease *= 1 - speedIncreaseFactor
       })
       requestAnimationFrame(function(){
         update()
@@ -452,24 +476,29 @@ const start = () => {
     return url.replace(idsRegex, '/ids/'+ids+'-'+size+'-'+size+'/')
   }
 
+  var imageSpeedIncrease = 0
   function showImage(an, sc, skuId, sourceX, sourceY) {
     return new Promise(function(resolve) {
       getImageUrl(an, sc, skuId)
         .then(function(response) {
-          var resizedUrl = resizeImageUrl(response, 100)
+          var resizedUrl = resizeImageUrl(response, 100*galleryResolution)
           var image=new Image()
-          var variation = Math.PI/8
+          var variation = Math.PI/18
           function onImageLoad(){
+            images.forEach(image => {
+              image.speedIncrease += 0.05
+            })
             images.push({
               image: image,
               t: 0,
               direction: -Math.PI/2 + (-variation + Math.random()*variation*2),
-              oscilationFreq: Math.random(),
+              oscilationFreq: 0.5,//Math.random(),
               oscilationAmp: Math.random(),
               sourceX: sourceX,
               sourceY: sourceY,
               scale: Math.random(),
-              origin: Math.random(),
+              origin: 1,
+              speedIncrease: 0,
             })
             image.removeEventListener('load', onImageLoad)
             resolve()
