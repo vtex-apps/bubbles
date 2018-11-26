@@ -224,7 +224,7 @@ const start = () => {
     var markerSpeed = 0.002
     var markerColor = '#F71963'
 
-    var imageSpeed = 0.004
+    var imageSpeed = 0.003
 
     function easeOutElastic(t, b, c, d) {
       var s=1.10158; var p=0;var a=c;
@@ -315,16 +315,22 @@ const start = () => {
 
         // galleryContext.restore()
 
-        var speedIncreaseFactor = 0.2
-        image.t += imageSpeed*delta + (image.speedIncrease * speedIncreaseFactor)*Math.max(0, 1-image.t*4)*delta
-        image.speedIncrease *= 1 - speedIncreaseFactor*delta
-        // image.t += imageSpeed*delta
+        // var speedIncreaseFactor = 0.2
+        // image.t += imageSpeed*delta + (image.speedIncrease * speedIncreaseFactor)*Math.max(0, 1-image.t*4)*delta
+        // image.speedIncrease *= 1 - speedIncreaseFactor*delta
+        image.t += imageSpeed*delta
       }
 
       requestAnimationFrame(updateAgain)
     }
+    let shouldUpdate = true
     function updateAgain(t){
       if(!start) start = t
+      shouldUpdate = !shouldUpdate
+      if(!shouldUpdate){
+        requestAnimationFrame(updateAgain)
+        return
+      }
       var delta = (t - start)/frame
       start = t
       update(delta)
@@ -515,10 +521,10 @@ const start = () => {
           var resizedUrl = resizeImageUrl(response, 100*galleryResolution)
           loadImage(resizedUrl).then(image=>{
             var variation = Math.PI/18
-            var speedIncrease = 0.05
-            images.forEach(image => {
-              image.speedIncrease += 0.05
-            })
+            // var speedIncrease = 0.05
+            // images.forEach(image => {
+            //   image.speedIncrease += 0.05
+            // })
             var maskedImage = maskImage(image, 100)
             images.push({
               image: maskedImage,
