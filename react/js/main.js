@@ -22,16 +22,18 @@ const start = () => {
   var pendingMarkers = 0
   var pulseCanvas = document.querySelector('#overlay')
   var pulseContext = pulseCanvas.getContext('2d')
-  var pulseResolution = 0.5
+  var pulseResolution = 0.25
   var heatmapCanvas = document.querySelector('#heatmap')
   var heatmapContext = heatmapCanvas.getContext('2d')
   var galleryCanvas = document.querySelector('#image-gallery')
   var galleryContext = galleryCanvas.getContext('2d')
-  var galleryResolution = 0.75
+  var galleryResolution = 0.8
   var mapCanvas = document.querySelector('#map')
   var mapContext = mapCanvas.getContext('2d')
   var dayMapURL = `${IMAGE_ROOT}/world-map-2.svg`
   var nightMapURL = `${IMAGE_ROOT}/world-map-2-night.svg`
+  var fps = 60
+  var frame = 1000 / fps
 
   var dayMapImage
   var nightMapImage
@@ -147,10 +149,8 @@ const start = () => {
       setTimeout(function moveQueue() {
         if (!queueMarker.isEmpty()) {
           var markerData=queueMarker.dequeue()
-          // console.log(markerData)
           renderMarkers(markerData)
           pendingMarkers--
-          // console.log(pendingMarkers)
         }
       }, time + (-timeVariation + (Math.random()*timeVariation*2)))
     }
@@ -158,7 +158,7 @@ const start = () => {
   } // End openSocket
 
   function connect() {
-    var evtSource = new EventSource("http://ws-storedash.vtex.com/webSocket/orderStreamv2");
+    var evtSource = new EventSource("https://ws-storedash.vtex.com/webSocket/orderStreamv2");
 
     evtSource.onerror = function (event) {
       alert("Couldn't connect to Storedash OrderStream evtSource.");
@@ -205,26 +205,7 @@ const start = () => {
     dayMapImage.src = dayMapURL
     nightMapImage.src = nightMapURL
 
-    function repeat(times,value){
-      var i
-      var array=[]
-      for(i=0;i<times;i++){
-        array.push(value)
-      }
-      return array
-    }
-    function getColor(alpha){
-      return 'rgba(137,20,204,'+alpha+')'
-    }
-    function p(times,alpha){
-      return repeat(times,getColor(alpha))
-    }
-
-    setTimeout(() => {
-      // window.projection = map.getProjection()
-
-      initCanvas()
-    }, 4000)
+    initCanvas()
   }
 
   function initCanvas() {
@@ -240,60 +221,75 @@ const start = () => {
     galleryCanvas.style.height = window.innerHeight+'px'
 
 
-    var markerSpeed = 0.004
+    var markerSpeed = 0.002
     var markerColor = '#F71963'
 
-    var imageSpeed = 0.006
+    var imageSpeed = 0.004
 
-    function update() {
+    function easeOutElastic(t, b, c, d) {
+      var s=1.10158; var p=0;var a=c;
+      if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*.35;
+      if (a < Math.abs(c)) { a=c; var s=p/4; }
+      else var s = p/(2*Math.PI) * Math.asin (c/a);
+      return a*Math.pow(2,-15*t) * Math.sin( (t*d-s)*(2*Math.PI)/p ) + c + b;
+    }
+
+    var start = null
+    function update(delta) {
       pulseContext.clearRect(0,0, window.innerWidth*pulseResolution, window.innerHeight*pulseResolution)
-      markers.forEach(function(marker){
-        if(marker.t < 1) {
-          pulseContext.fillStyle = markerColor
 
-          pulseContext.globalAlpha = 1
+      pulseContext.fillStyle = markerColor
+
+      pulseContext.globalAlpha = 1
+      pulseContext.beginPath()
+      for(let i=0; i< markers.length; i++){
+        let marker = markers[i]
+        if(marker.t >= 1) continue
+
+        pulseContext.moveTo(marker.x*pulseResolution, marker.y*pulseResolution)
+        pulseContext.arc(
+          marker.x*pulseResolution, marker.y*pulseResolution,
+          6*Math.pow(1-marker.t,3)*pulseResolution,
+          0, 2*Math.PI
+        )
+      }
+      pulseContext.fill()
+
+      pulseContext.strokeStyle = markerColor
+
+      for(let i=0; i< markers.length; i++){
+        let marker = markers[i]
+        var pulseT = Math.min(1,marker.t*5)
+
+        if(pulseT < 1) {
+          // var pulseScale = Math.log10(Math.max(1, marker.value/200))+1
+          var pulseScale = Math.log10(Math.max(1, marker.value/200))+1
+          var initialPulseSize = 70*pulseScale
+          var pulseSize = initialPulseSize*Math.pow(pulseT,1/2)
+          pulseContext.globalAlpha = Math.pow(1-pulseT,1/4)*0.4
+          pulseContext.lineWidth = pulseSize*2*Math.pow(1-pulseT, 8) * pulseResolution
+          // var lineWidth = pulseSize*2*Math.pow(1-pulseT, 8) * pulseResolution
+          // pulseContext.strokeStyle = markerColor
+
           pulseContext.beginPath()
           pulseContext.arc(
             marker.x*pulseResolution, marker.y*pulseResolution,
-            6*Math.pow(1-marker.t,3)*pulseResolution,
+            pulseSize*pulseResolution,
             0, 2*Math.PI
           )
-          pulseContext.fill()
-
-          var pulseT = Math.min(1,marker.t*5)
-
-          if(pulseT < 1) {
-            var pulseScale = Math.log10(Math.max(1, marker.value/200))+1
-            var initialPulseSize = 70*pulseScale
-            var pulseSize = initialPulseSize*Math.pow(pulseT,1/2)
-            pulseContext.globalAlpha = Math.pow(1-pulseT,1/4)*0.4
-            pulseContext.lineWidth = pulseSize*2*Math.pow(1-pulseT, 8)*pulseResolution
-            pulseContext.strokeStyle = markerColor
-            pulseContext.beginPath()
-            pulseContext.arc(
-              marker.x*pulseResolution, marker.y*pulseResolution,
-              pulseSize*pulseResolution,
-              0, 2*Math.PI
-            )
-            pulseContext.stroke()
-          }
-
-          marker.t += markerSpeed
+          pulseContext.stroke()
         }
-      })
+        marker.t += markerSpeed*delta
+      }
 
       galleryContext.clearRect(0, 0, window.innerWidth*galleryResolution, window.innerHeight*galleryResolution)
-      images.forEach(function(image, i) {
+      for(let i =0; i<images.length; i++){
+        let image = images[i]
+        if(image.t >= 1) continue
+
         var offset = Math.pow(image.t, 1/3) * 350
-        function easeOutElastic(t, b, c, d) {
-          var s=1.10158; var p=0;var a=c;
-          if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*.35;
-          if (a < Math.abs(c)) { a=c; var s=p/4; }
-          else var s = p/(2*Math.PI) * Math.asin (c/a);
-          return a*Math.pow(2,-15*t) * Math.sin( (t*d-s)*(2*Math.PI)/p ) + c + b;
-        }
         var scale = Math.max(0.1, easeOutElastic(Math.min(1,image.t*1.5), 0, 1, 1))*(1+image.scale*0.6)
-        var imageSize = 70
+        var imageSize = 100
         var origin = {
           x: window.innerWidth - 100 - (image.origin * 60),
           y: window.innerHeight + 0,
@@ -303,31 +299,12 @@ const start = () => {
           y: image.t * -(window.innerHeight - 300),
         }
         var targetSize = imageSize * scale
-        var oscilation = Math.sin(image.t*image.oscilationFreq*5)*image.oscilationAmp*70*(1+image.t)
+        var oscilation = Math.sin(image.t*image.oscilationFreq*5)*image.oscilationAmp*60*(1+image.t)
         var targetPos = {
           x: origin.x+(Math.cos(image.direction)*offset)+oscilation+gravity.x,
           y: origin.y+(Math.sin(image.direction)*offset)+gravity.y,
         }
 
-        galleryContext.fillStyle = 'white'
-        galleryContext.save()
-        // galleryContext.globalCompositeOperation = 'source-over'
-        galleryContext.globalAlpha = 1
-        galleryContext.beginPath()
-        galleryContext.arc(
-          targetPos.x*galleryResolution, targetPos.y*galleryResolution,
-          (targetSize/2)*galleryResolution, 0, 2*Math.PI
-        )
-        galleryContext.fill()
-
-        // galleryContext.beginPath()
-        // galleryContext.arc(
-        //   targetPos.x*galleryResolution, targetPos.y*galleryResolution,
-        //   (targetSize/2)*galleryResolution, 0, 2*Math.PI
-        // )
-        galleryContext.clip()
-
-        // galleryContext.globalCompositeOperation = 'source-atop'
         galleryContext.drawImage(
           image.image,
           (targetPos.x - (targetSize/2))*galleryResolution,
@@ -336,27 +313,40 @@ const start = () => {
           targetSize*galleryResolution,
         )
 
-        galleryContext.restore()
+        // galleryContext.restore()
 
         var speedIncreaseFactor = 0.2
-        image.t += imageSpeed + (image.speedIncrease * speedIncreaseFactor)*Math.max(0, 1-image.t*4)
-        image.speedIncrease *= 1 - speedIncreaseFactor
-      })
-      requestAnimationFrame(function(){
-        update()
-      })
+        image.t += imageSpeed*delta + (image.speedIncrease * speedIncreaseFactor)*Math.max(0, 1-image.t*4)*delta
+        image.speedIncrease *= 1 - speedIncreaseFactor*delta
+        // image.t += imageSpeed*delta
+      }
+
+      requestAnimationFrame(updateAgain)
     }
+    function updateAgain(t){
+      if(!start) start = t
+      var delta = (t - start)/frame
+      start = t
+      update(delta)
+    }
+    updateAgain(performance.now())
 
     setInterval(function(){
-      markers = markers.filter(function(marker){
-        return marker.t < 1
-      })
-      images = images.filter(function(image){
-        return image.t < 1
-      }).slice(-30)
+      let i
+      for(i = markers.length-1; i >= 0; i--){
+        let marker = markers[i]
+        if(marker.t >= 1) {
+          markers.splice(i, 1)
+        }
+      }
+      // for(i = images.length-1; i >= 0; i--){
+      //   let image = images[i]
+      //   if(image.t >= 1) {
+      //     image.image = null
+      //     images.splice(i, 1)
+      //   }
+      // }
     }, 1000)
-
-    update()
   }
 
   function getNextTime() {
@@ -398,37 +388,28 @@ const start = () => {
       var pos = latLngToPoint(data.lat, data.long, mapWidth*mapScale, mapHeight*mapScale)
       pos.x += (-30*mapScale)+(mapOffset.x*mapScale)
       pos.y += (130*mapScale)+(mapOffset.y*mapScale)
-      var variation = 3
-      pos.x += -variation + (Math.random() * variation * 2)
-      pos.y += -variation + (Math.random() * variation * 2)
-
       showImage(data.accountName, data.salesChannel, data.sku, pos.x, pos.y)
         .then(function(){
-          requestAnimationFrame(function addMarkerWrapper(data) {
-            return function addMarker() {
-              var value = 1
-              if (conversionRates[data.transactionCurrency]) {
-                value = data.transactionTotal * conversionRates[data.transactionCurrency];
-              } else {
-                console.warn('Missing conversion rate for ' + data.transactionCurrency);
-              }
-              markers.push({
-                x: pos.x,
-                y: pos.y,
-                t: 0,
-                value: value,
-              })
+          let value = 1
+          if (conversionRates[data.transactionCurrency]) {
+            value = data.transactionTotal * conversionRates[data.transactionCurrency];
+          } else {
+            console.warn('Missing conversion rate for ' + data.transactionCurrency);
+          }
 
-              addHeatMapPoint(pos.x, pos.y)
+          var variation = 3
+          pos.x += -variation + (Math.random() * variation * 2)
+          pos.y += -variation + (Math.random() * variation * 2)
 
-              if (conversionRates[data.transactionCurrency]) {
-                data.transactionTotal = data.transactionTotal * conversionRates[data.transactionCurrency];
-              } else {
-                console.warn('Missing conversion rate for ' + data.transactionCurrency);
-              }
-            }
-          }(data))
-      })
+          markers.push({
+            x: pos.x,
+            y: pos.y,
+            t: 0,
+            value: value,
+          })
+
+          addHeatMapPoint(pos.x, pos.y)
+        })
     }
   }
 
@@ -476,19 +457,71 @@ const start = () => {
     return url.replace(idsRegex, '/ids/'+ids+'-'+size+'-'+size+'/')
   }
 
+  var loadImageDelay = 200
+  var shouldLoadImage = true
+
+  const loadImage = url => new Promise((resolve, reject) => {
+    if(!shouldLoadImage){
+      reject()
+      return
+    }
+    var image=new Image()
+    function onImageLoad(){
+      image.removeEventListener('load', onImageLoad)
+      resolve(image)
+    }
+    image.addEventListener('load', onImageLoad)
+    image.src = url
+    setTimeout(()=>{
+      image.removeEventListener('load', onImageLoad)
+      reject()
+    }, 3000)
+
+    shouldLoadImage = false
+    setTimeout(() => { shouldLoadImage = true }, loadImageDelay)
+  })
+
+  function maskImage(image, size) {
+    var canvas=document.createElement('canvas')
+    canvas.setAttribute('width', size)
+    canvas.setAttribute('height', size)
+    var context = canvas.getContext('2d')
+
+    context.fillStyle = 'white'
+    context.save()
+    context.globalAlpha = 1
+    context.beginPath()
+    context.arc(
+      (size/2)*galleryResolution, (size/2)*galleryResolution,
+      (size/2)*galleryResolution, 0, 2*Math.PI
+    )
+    context.fill()
+
+    context.beginPath()
+    context.arc(
+      (size/2)*galleryResolution, (size/2)*galleryResolution,
+      (size/2)*galleryResolution, 0, 2*Math.PI
+    )
+    context.clip()
+
+    context.drawImage(image, 0, 0)
+    return canvas
+  }
+
   function showImage(an, sc, skuId, sourceX, sourceY) {
     return new Promise(function(resolve) {
       getImageUrl(an, sc, skuId)
         .then(function(response) {
           var resizedUrl = resizeImageUrl(response, 100*galleryResolution)
-          var image=new Image()
-          var variation = Math.PI/18
-          function onImageLoad(){
+          loadImage(resizedUrl).then(image=>{
+            var variation = Math.PI/18
+            var speedIncrease = 0.05
             images.forEach(image => {
               image.speedIncrease += 0.05
             })
+            var maskedImage = maskImage(image, 100)
             images.push({
-              image: image,
+              image: maskedImage,
               t: 0,
               direction: -Math.PI/2, // + (-variation + Math.random()*variation*2),
               // oscilationFreq: Math.random(),
@@ -501,11 +534,10 @@ const start = () => {
               origin: 1,
               speedIncrease: 0,
             })
-            image.removeEventListener('load', onImageLoad)
             resolve()
-          }
-          image.addEventListener('load', onImageLoad)
-          image.src=resizedUrl
+          }).catch(()=>{
+            resolve()
+          })
         })
         .catch(function handleError() {
           resolve()

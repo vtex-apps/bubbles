@@ -5,7 +5,8 @@
     "lint": "tsc --noEmit && tslint -c tslint.json './**/*.ts'"
   },
   "dependencies": {
-    "axios": "^0.18.0"
+    "axios": "^0.18.0",
+    "lodash": "^4.17.11"
   },
   "devDependencies": {
     "@types/graphql": "^0.13.3",
