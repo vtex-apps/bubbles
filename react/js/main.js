@@ -243,7 +243,7 @@ const start = () => {
     var markerSpeed = 0.004
     var markerColor = '#F71963'
 
-    var imageSpeed = 0.004
+    var imageSpeed = 0.006
 
     function update() {
       pulseContext.clearRect(0,0, window.innerWidth*pulseResolution, window.innerHeight*pulseResolution)
@@ -303,7 +303,7 @@ const start = () => {
           y: image.t * -(window.innerHeight - 300),
         }
         var targetSize = imageSize * scale
-        var oscilation = Math.sin(image.t*image.oscilationFreq*8)*image.oscilationAmp*70*(1+image.t)
+        var oscilation = Math.sin(image.t*image.oscilationFreq*5)*image.oscilationAmp*70*(1+image.t)
         var targetPos = {
           x: origin.x+(Math.cos(image.direction)*offset)+oscilation+gravity.x,
           y: origin.y+(Math.sin(image.direction)*offset)+gravity.y,
@@ -353,7 +353,7 @@ const start = () => {
       })
       images = images.filter(function(image){
         return image.t < 1
-      }).slice(-50)
+      }).slice(-30)
     }, 1000)
 
     update()
@@ -476,7 +476,6 @@ const start = () => {
     return url.replace(idsRegex, '/ids/'+ids+'-'+size+'-'+size+'/')
   }
 
-  var imageSpeedIncrease = 0
   function showImage(an, sc, skuId, sourceX, sourceY) {
     return new Promise(function(resolve) {
       getImageUrl(an, sc, skuId)
@@ -495,7 +494,7 @@ const start = () => {
               // oscilationFreq: Math.random(),
               // oscilationAmp: Math.random(),
               oscilationFreq: 1,
-              oscilationAmp: Math.random(),
+              oscilationAmp: -1+(Math.random()*2),
               sourceX: sourceX,
               sourceY: sourceY,
               scale: Math.random(),
