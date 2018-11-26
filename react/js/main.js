@@ -303,7 +303,7 @@ const start = () => {
           y: image.t * -(window.innerHeight - 300),
         }
         var targetSize = imageSize * scale
-        var oscilation = Math.sin(image.t*image.oscilationFreq*8)*image.oscilationAmp*50*(1+image.t*0.4)
+        var oscilation = Math.sin(image.t*image.oscilationFreq*8)*image.oscilationAmp*70*(1+image.t)
         var targetPos = {
           x: origin.x+(Math.cos(image.direction)*offset)+oscilation+gravity.x,
           y: origin.y+(Math.sin(image.direction)*offset)+gravity.y,
@@ -491,8 +491,10 @@ const start = () => {
             images.push({
               image: image,
               t: 0,
-              direction: -Math.PI/2 + (-variation + Math.random()*variation*2),
-              oscilationFreq: 0.5,//Math.random(),
+              direction: -Math.PI/2, // + (-variation + Math.random()*variation*2),
+              // oscilationFreq: Math.random(),
+              // oscilationAmp: Math.random(),
+              oscilationFreq: 1,
               oscilationAmp: Math.random(),
               sourceX: sourceX,
               sourceY: sourceY,
