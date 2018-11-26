@@ -1,7 +1,7 @@
 {
   "name": "bubbles",
   "vendor": "vtex",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "title": "VTEX Bubbles",
   "description": "Visualization of VTEX orders around the world",
   "credentialType": "absolute",
