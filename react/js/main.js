@@ -224,7 +224,7 @@ const start = () => {
     var markerSpeed = 0.002
     var markerColor = '#F71963'
 
-    var imageSpeed = 0.003
+    var imageSpeed = 0.0025
 
     function easeOutElastic(t, b, c, d) {
       var s=1.10158; var p=0;var a=c;
@@ -288,7 +288,7 @@ const start = () => {
         if(image.t >= 1) continue
 
         var offset = Math.pow(image.t, 1/3) * 350
-        var scale = Math.max(0.1, easeOutElastic(Math.min(1,image.t*1.5), 0, 1, 1))*(1+image.scale*0.6)
+        var scale = Math.max(0.1, easeOutElastic(Math.min(1,image.t*2), 0, 1, 1))*(1+image.scale*0.6)
         var imageSize = 100
         var origin = {
           x: window.innerWidth - 100 - (image.origin * 60),
@@ -296,10 +296,10 @@ const start = () => {
         }
         var gravity = {
           x: 0,
-          y: image.t * -(window.innerHeight - 300),
+          y: image.t * -(window.innerHeight - 300 + (image.gravityIncrease*300)),
         }
         var targetSize = imageSize * scale
-        var oscilation = Math.sin(image.t*image.oscilationFreq*5)*image.oscilationAmp*60*(1+image.t)
+        var oscilation = Math.sin(image.t*image.oscilationFreq*14)*image.oscilationAmp*40*(1+image.t*0.1)
         var targetPos = {
           x: origin.x+(Math.cos(image.direction)*offset)+oscilation+gravity.x,
           y: origin.y+(Math.sin(image.direction)*offset)+gravity.y,
@@ -463,7 +463,7 @@ const start = () => {
     return url.replace(idsRegex, '/ids/'+ids+'-'+size+'-'+size+'/')
   }
 
-  var loadImageDelay = 200
+  var loadImageDelay = 350
   var shouldLoadImage = true
 
   const loadImage = url => new Promise((resolve, reject) => {
@@ -499,21 +499,44 @@ const start = () => {
     context.beginPath()
     context.arc(
       (size/2)*galleryResolution, (size/2)*galleryResolution,
-      (size/2)*galleryResolution, 0, 2*Math.PI
+      (size/2)*galleryResolution-2, 0, 2*Math.PI
     )
     context.fill()
 
-    context.beginPath()
-    context.arc(
-      (size/2)*galleryResolution, (size/2)*galleryResolution,
-      (size/2)*galleryResolution, 0, 2*Math.PI
-    )
-    context.clip()
+    if (image){
+      // context.strokeStyle = '#142032'
+      // context.lineWidth = 2
+      // context.stroke()
 
-    context.drawImage(image, 0, 0)
+      context.beginPath()
+      context.arc(
+        (size/2)*galleryResolution, (size/2)*galleryResolution,
+        (size/2)*galleryResolution-2, 0, 2*Math.PI
+      )
+      context.clip()
+
+      context.drawImage(image, 1, 1)
+    }
     return canvas
   }
 
+  function addDummyImage(sourceX, sourceY){
+    images.unshift({
+      image: maskImage(null, 100),
+      t: 0,
+      direction: -Math.PI/2, // + (-variation + Math.random()*variation*2),
+      // oscilationFreq: Math.random(),
+      // oscilationAmp: Math.random(),
+      oscilationFreq: Math.random(),
+      oscilationAmp: -1+(Math.random()*2),
+      sourceX: sourceX,
+      sourceY: sourceY,
+      scale: -0.85-Math.random()*0.1,
+      origin: 1,
+      speedIncrease: 0,
+      gravityIncrease: 1+Math.random()*2,
+    })
+  }
   function showImage(an, sc, skuId, sourceX, sourceY) {
     return new Promise(function(resolve) {
       getImageUrl(an, sc, skuId)
@@ -532,20 +555,23 @@ const start = () => {
               direction: -Math.PI/2, // + (-variation + Math.random()*variation*2),
               // oscilationFreq: Math.random(),
               // oscilationAmp: Math.random(),
-              oscilationFreq: 1,
+              oscilationFreq: Math.random(),
               oscilationAmp: -1+(Math.random()*2),
               sourceX: sourceX,
               sourceY: sourceY,
               scale: Math.random(),
               origin: 1,
               speedIncrease: 0,
+              gravityIncrease: Math.random(),
             })
             resolve()
           }).catch(()=>{
+            addDummyImage(sourceX, sourceY)
             resolve()
           })
         })
         .catch(function handleError() {
+          addDummyImage(sourceX, sourceY)
           resolve()
         })
     })
