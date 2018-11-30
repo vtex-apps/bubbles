@@ -1,7 +1,8 @@
 {
   "pages": {
     "bubbles": {
-      "path": "/bubbles"
+      "path": "/bubbles",
+      "auth": true
     }
   },
   "extensions": {
