@@ -158,7 +158,7 @@ const start = () => {
   } // End openSocket
 
   function connect() {
-    var evtSource = new EventSource("https://ws-storedash.vtex.com/webSocket/orderStreamv2");
+    var evtSource = new EventSource("https://storedash-api.vtex.com/api/storedash/orderStream");
 
     evtSource.onerror = function (event) {
       alert("Couldn't connect to Storedash OrderStream evtSource.");
