@@ -113,6 +113,8 @@ const start = () => {
     }
 
     function onClose() {
+      window.location.href = '/_v/auth-server/v1/login?ReturnUrl=https://vtex.io/bubbles'
+
       console.log('Closed')
       clearInterval(timeConnect)
       timeConnect = setInterval(openSocket, 1000)
@@ -158,10 +160,25 @@ const start = () => {
   } // End openSocket
 
   function connect() {
-    var evtSource = new EventSource("https://storedash-api.vtex.com/api/storedash/orderStream");
+    function getCookie(name) {
+      var value = "; " + document.cookie;
+      var parts = value.split("; " + name + "=");
+      if (parts.length == 2) return parts.pop().split(";").shift();
+    }
+    // TEMP FIX
+    var autCookie = getCookie('VtexIdclientAutCookie') || null
+    var url = "https://storedash-api.vtex.com/api/storedash/orderStream"
+
+    console.log(autCookie)
+
+    if(autCookie) {
+      url+='?authToken='+autCookie
+    }
+
+    var evtSource = new EventSource(url);
 
     evtSource.onerror = function (event) {
-      alert("Couldn't connect to Storedash OrderStream evtSource.");
+      console.log("Couldn't connect to Storedash OrderStream evtSource.");
     };
 
     return evtSource;
