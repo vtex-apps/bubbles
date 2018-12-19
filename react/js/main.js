@@ -167,7 +167,7 @@ const start = () => {
     }
     // TEMP FIX
     var autCookie = getCookie('VtexIdclientAutCookie') || null
-    var url = "https://storedash-api.vtex.com/api/storedash/orderStream"
+    var url = "http://storedash-api.vtex.com/api/storedash/orderStream"
 
     console.log(autCookie)
 
