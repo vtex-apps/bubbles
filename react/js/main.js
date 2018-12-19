@@ -113,7 +113,10 @@ const start = () => {
     }
 
     function onClose() {
-      window.location.href = '/_v/auth-server/v1/login?ReturnUrl=https://vtex.io/bubbles'
+      setTimeout(() => {
+        var curAddress = window.location.href
+        window.location.href = `/_v/auth-server/v1/login?ReturnUrl=${curAddress}`
+      }, 10000)
 
       console.log('Closed')
       clearInterval(timeConnect)
