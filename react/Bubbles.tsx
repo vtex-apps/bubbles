@@ -18,7 +18,7 @@ export default class Bubbles extends Component {
           <title>VTEX Order Map</title>
           <link rel="shortcut icon" href="https://io.vtex.com.br/favico/1.3.0/favico.ico"></link>
         </Helmet>
-        <div className="container" id="container">
+        <div className="container" id="container" style={{ background: '#142032' }}>
           <canvas id="map"></canvas>
           <canvas id="heatmap"></canvas>
           <canvas id="overlay"></canvas>
