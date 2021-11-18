@@ -14,6 +14,7 @@ const start = () => {
   var markers = []
   var images = []
   var markerInterval
+  var messageInterval
   var timeConnect
   var connection
   var nextTime
@@ -23,8 +24,8 @@ const start = () => {
   var pulseCanvas = document.querySelector('#overlay')
   var pulseContext = pulseCanvas.getContext('2d')
   var pulseResolution = 0.25
-  var heatmapCanvas = document.querySelector('#heatmap')
-  var heatmapContext = heatmapCanvas.getContext('2d')
+  // var heatmapCanvas = document.querySelector('#heatmap')
+  // var heatmapContext = heatmapCanvas.getContext('2d')
   var galleryCanvas = document.querySelector('#image-gallery')
   var galleryContext = galleryCanvas.getContext('2d')
   var galleryResolution = 0.8
@@ -115,6 +116,7 @@ const start = () => {
   function openSocket() {
     clearInterval(timeConnect)
     clearInterval(markerInterval)
+    clearInterval(messageInterval)
 
     function onClose(event) {
       alert('on close '+String(event))
@@ -133,6 +135,20 @@ const start = () => {
       document.querySelector('.login').style.display = "block"
       document.querySelector('.loading').style.display='none'
     }
+
+    function parseJwt (token) {
+      try {
+        var base64Url = token.split('.')[1];
+        var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+
+        return JSON.parse(jsonPayload);
+      } catch (e) {
+        return null
+      }
+    };
 
     function onError(event) {
       if (event) {
@@ -154,6 +170,30 @@ const start = () => {
       console.log('Connected')
       document.querySelector('.login').style.display='none'
       document.querySelector('.loading').style.display='none'
+      updateTokenMessage({ initial: true })
+    }
+
+    function updateTokenMessage({ initial }) {
+      const jwt = parseJwt(localStorage.getItem('autCookie'))
+      if (!jwt) {
+        return
+      }
+      const expiry = new Date(jwt.exp*1000)
+      const remaining = (jwt.exp-Date.now()/1000)
+      const remainingHours = Math.floor(remaining/60/60)
+      const remainingMinutes = Math.floor(((remaining/60/60)-remainingHours)*60)
+
+      if (remainingHours > 1 && !initial) {
+        return
+      }
+
+      document.querySelector('.valid').style.display='block'
+      document.querySelector('.valid').innerHTML = `Token valid until ${expiry}. <br> Please refresh the page and generate a new token before then. <br> ${remainingHours} hour(s) ${remainingMinutes} minute(s) left`
+      if (initial) {
+        setTimeout(() => {
+          document.querySelector('.valid').style.display='none'
+        }, 10 * 1000)
+      }
     }
 
     if (!connection) {
@@ -187,6 +227,10 @@ const start = () => {
       }
 
     }, 2000)
+
+    messageInterval = setInterval(() => {
+      updateTokenMessage({})
+    }, 1000 * 60)
 
     function moveQueue(time) {
       pendingMarkers++
@@ -287,8 +331,8 @@ const start = () => {
     pulseCanvas.setAttribute('height',window.innerHeight*pulseResolution)
     pulseCanvas.style.width = window.innerWidth+'px'
     pulseCanvas.style.height = window.innerHeight+'px'
-    heatmapCanvas.setAttribute('width',window.innerWidth)
-    heatmapCanvas.setAttribute('height',window.innerHeight)
+    // heatmapCanvas.setAttribute('width',window.innerWidth)
+    // heatmapCanvas.setAttribute('height',window.innerHeight)
     galleryCanvas.setAttribute('width',window.innerWidth*galleryResolution)
     galleryCanvas.setAttribute('height',window.innerHeight*galleryResolution)
     galleryCanvas.style.width = window.innerWidth+'px'
@@ -323,7 +367,7 @@ const start = () => {
         pulseContext.moveTo(marker.x*pulseResolution, marker.y*pulseResolution)
         pulseContext.arc(
           marker.x*pulseResolution, marker.y*pulseResolution,
-          6*Math.pow(1-marker.t,3)*pulseResolution,
+          16*Math.pow(1-marker.t,10)*pulseResolution,
           0, 2*Math.PI
         )
       }
@@ -340,8 +384,9 @@ const start = () => {
           var pulseScale = Math.log10(Math.max(1, marker.value/200))+1
           var initialPulseSize = 70*pulseScale
           var pulseSize = initialPulseSize*Math.pow(pulseT,1/2)
-          pulseContext.globalAlpha = Math.pow(1-pulseT,1/4)*0.4
-          pulseContext.lineWidth = pulseSize*2*Math.pow(1-pulseT, 8) * pulseResolution
+          // pulseContext.globalAlpha = Math.pow(1-pulseT,1/4)*0.4
+          // pulseContext.lineWidth = pulseSize*2*Math.pow(1-pulseT, 8) * pulseResolution
+          pulseContext.lineWidth = pulseSize*1*Math.pow(1-pulseT, 8) * pulseResolution
           // var lineWidth = pulseSize*2*Math.pow(1-pulseT, 8) * pulseResolution
           // pulseContext.strokeStyle = markerColor
 
@@ -415,7 +460,7 @@ const start = () => {
       let i
       for(i = markers.length-1; i >= 0; i--){
         let marker = markers[i]
-        if(marker.t >= 1) {
+        if(marker.t >= 0.2) {
           markers.splice(i, 1)
         }
       }
@@ -434,7 +479,7 @@ const start = () => {
   }
 
   function addHeatMapPoint(x,y){
-    heatmapContext.fillStyle='#00BBD4'
+    heatmapContext.fillStyle='#ffc4dd'
     // heatmapContext.fillStyle='#F71963'
     heatmapContext.globalAlpha = 0.15
     heatmapContext.beginPath()
@@ -488,7 +533,7 @@ const start = () => {
             value: value,
           })
 
-          addHeatMapPoint(pos.x, pos.y)
+          // addHeatMapPoint(pos.x, pos.y)
         })
     }
   }
@@ -655,9 +700,9 @@ const start = () => {
 
   attempt()
 
-  setInterval(function reloadWindow() {
-    window.location.reload(false);
-  }, 900000);
+  // setInterval(function reloadWindow() {
+  //   window.location.reload(false);
+  // }, 900000);
 }
 
 export {

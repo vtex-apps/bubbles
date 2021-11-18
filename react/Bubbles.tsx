@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { Helmet } from 'render'
 
 import './js/daynightoverlay.js'
+//@ts-ignore
 import { IMAGE_ROOT, start } from './js/main.js'
 
 import './global.css'
@@ -94,7 +95,7 @@ export default class Bubbles extends Component {
         </Helmet>
         <div className="container" id="container" style={{ background: '#142032' }}>
           <canvas id="map"></canvas>
-          <canvas id="heatmap"></canvas>
+          {/* <canvas id="heatmap"></canvas> */}
           <canvas id="overlay"></canvas>
           <canvas id="image-gallery"></canvas>
           <a href="https://en.vtex.com/" rel="noopener noreferrer" target="_blank">
@@ -102,7 +103,8 @@ export default class Bubbles extends Component {
           </a>
         </div>
         <button onClick={this.handleLogin} className="login">Login</button>
-        <div className="loading">Loading....</div>
+        <div className="loading">Connecting...</div>
+        <div className="valid"></div>
       </div>
     )
   }

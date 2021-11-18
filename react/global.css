@@ -217,9 +217,19 @@ a[href^="https://maps.google.com/maps"]{display:none !important}
 .loading {
   display: none;
   position: fixed;
-  left: 0;
-  top: 0;
+  left: 20px;
+  top: 10px;
   color:#fff;
+  pointer-events: none;
+  z-index: 99999;
+}
+
+.valid {
+  display: none;
+  position: fixed;
+  top: 60px;
+  left: 20px;
+  color: #fff;
   pointer-events: none;
   z-index: 99999;
 }
