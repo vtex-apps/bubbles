@@ -103,27 +103,67 @@ const start = () => {
     'GTQ': 0.50,
   };
 
+  function attempt() {
+    console.log('attempt')
+    connection = connect();
+    if (localStorage.getItem('autCookie')) {
+      document.querySelector('.loading').style.display='block'
+    }
+    openSocket();
+  }
+
   function openSocket() {
     clearInterval(timeConnect)
     clearInterval(markerInterval)
 
-    connection.onopen = function onOpen() {
+    function onClose(event) {
+      alert('on close '+String(event))
+      setTimeout(attempt, 5000)
+      // window.localStorage.removeItem('autCookie')
+      // setTimeout(() => {
+      //   var curAddress = window.location.href
+      //   localStorage.removeItem('autCookie')
+      //   // window.location.href = `/_v/auth-server/v1/login?ReturnUrl=${curAddress}`
+      // }, 10000)
+
+      // console.log('Closed')
+      // clearInterval(timeConnect)
+      // timeConnect = setInterval(openSocket, 1000)
+
+      document.querySelector('.login').style.display = "block"
+      document.querySelector('.loading').style.display='none'
+    }
+
+    function onError(event) {
+      if (event) {
+        // alert('on error '+event.message)
+        console.log('error message', event)
+        console.log(JSON.stringify(event))
+        console.table(event)
+      } else {
+        // alert('on error, no event')
+      }
+      window.localStorage.removeItem('autCookie')
+      setTimeout(attempt, 5000)
+      document.querySelector('.login').style.display = "block"
+      document.querySelector('.loading').style.display='none'
+    }
+
+    function onOpen() {
       // Connected
       console.log('Connected')
+      document.querySelector('.login').style.display='none'
+      document.querySelector('.loading').style.display='none'
     }
 
-    function onClose() {
-      setTimeout(() => {
-        var curAddress = window.location.href
-        window.location.href = `/_v/auth-server/v1/login?ReturnUrl=${curAddress}`
-      }, 10000)
-
-      console.log('Closed')
-      clearInterval(timeConnect)
-      timeConnect = setInterval(openSocket, 1000)
+    if (!connection) {
+      console.log('no autCookie, no connection')
+      onError()
+      return
     }
 
-    connection.onerror = onClose
+    connection.onopen = onOpen
+    connection.onerror = onError
     connection.onclose = onClose
 
     connection.onmessage = function onMessage (msg) {
@@ -163,6 +203,7 @@ const start = () => {
   } // End openSocket
 
   function connect() {
+    console.log('connect')
     function getCookie(name) {
       var value = "; " + document.cookie;
       var parts = value.split("; " + name + "=");
@@ -172,17 +213,30 @@ const start = () => {
     var autCookie = getCookie('VtexIdclientAutCookie') || null
     var url = "https://storedash-api.vtex.com/api/storedash/orderStream"
 
-    console.log(autCookie)
+    if (!autCookie) {
+      autCookie = localStorage.getItem('autCookie')
+    }
+
+    // if (!autCookie || autCookie === 'null') {
+    //   autCookie = window.prompt('authToken')
+    //   localStorage.setItem('autCookie', autCookie)
+    // }
 
     if(autCookie) {
       url+='?authToken='+autCookie
     }
 
+    if (!autCookie) {
+      return
+    }
+
     var evtSource = new EventSource(url);
 
-    evtSource.onerror = function (event) {
-      console.log("Couldn't connect to Storedash OrderStream evtSource.");
-    };
+    // evtSource.onerror = function (event) {
+    //   console.log("Couldn't connect to Storedash OrderStream evtSource.");
+    //   document.querySelector('.login').style.display='block'
+    //   attempt()
+    // };
 
     return evtSource;
   }
@@ -598,8 +652,8 @@ const start = () => {
   }
 
   initialize()
-  connection = connect();
-  openSocket();
+
+  attempt()
 
   setInterval(function reloadWindow() {
     window.location.reload(false);

@@ -204,3 +204,22 @@ a[href^="https://maps.google.com/maps"]{display:none !important}
   left: 0;
   transform-origin: 0 0;
 }
+
+.login {
+  display: none;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 99999;
+}
+
+
+.loading {
+  display: none;
+  position: fixed;
+  left: 0;
+  top: 0;
+  color:#fff;
+  pointer-events: none;
+  z-index: 99999;
+}
