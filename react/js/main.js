@@ -214,6 +214,7 @@ const start = () => {
       // console.log(msg.data)
       queueMarker.enqueue(msg.data)
       nextTime = getNextTime()
+      errorCount = 0
     };
 
     markerInterval = setInterval(function handleMarkerQueue() {

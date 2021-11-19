@@ -213,6 +213,14 @@ a[href^="https://maps.google.com/maps"]{display:none !important}
   z-index: 99999;
 }
 
+.reset {
+  display: none;
+  position: fixed;
+  left: 150px;
+  top: 0;
+  z-index: 99999;
+}
+
 
 .loading {
   display: none;

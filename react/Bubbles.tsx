@@ -10,6 +10,19 @@ import './global.css'
 export default class Bubbles extends Component {
   public componentDidMount() {
     start()
+    if (window.localStorage.getItem('autCookie')) {
+      //@ts-ignore
+      document.querySelector('.reset').style.display = 'block'
+      setTimeout(() => {
+        //@ts-ignore
+        document.querySelector('.reset').style.display = 'none'
+      }, 10*1000)
+    }
+  }
+
+  private handleReset = () => {
+    window.localStorage.removeItem('autCookie')
+    window.location.reload()
   }
 
   private handleLogin = () => {
@@ -103,6 +116,7 @@ export default class Bubbles extends Component {
           </a>
         </div>
         <button onClick={this.handleLogin} className="login">Login</button>
+        <button onClick={this.handleReset} className="reset">Reset Token</button>
         <div className="loading">Connecting...</div>
         <div className="valid"></div>
       </div>
