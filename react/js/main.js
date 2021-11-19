@@ -23,7 +23,7 @@ const start = () => {
   var pendingMarkers = 0
   var pulseCanvas = document.querySelector('#overlay')
   var pulseContext = pulseCanvas.getContext('2d')
-  var pulseResolution = 0.25
+  var pulseResolution = 0.5
   // var heatmapCanvas = document.querySelector('#heatmap')
   // var heatmapContext = heatmapCanvas.getContext('2d')
   var galleryCanvas = document.querySelector('#image-gallery')
@@ -35,6 +35,7 @@ const start = () => {
   var nightMapURL = `${IMAGE_ROOT}/world-map-2-night.svg`
   var fps = 60
   var frame = 1000 / fps
+  var errorCount = 0
 
   var dayMapImage
   var nightMapImage
@@ -159,7 +160,10 @@ const start = () => {
       } else {
         // alert('on error, no event')
       }
-      window.localStorage.removeItem('autCookie')
+      errorCount++
+      if (errorCount > 2) {
+        window.localStorage.removeItem('autCookie')
+      }
       setTimeout(attempt, 5000)
       document.querySelector('.login').style.display = "block"
       document.querySelector('.loading').style.display='none'
@@ -367,7 +371,7 @@ const start = () => {
         pulseContext.moveTo(marker.x*pulseResolution, marker.y*pulseResolution)
         pulseContext.arc(
           marker.x*pulseResolution, marker.y*pulseResolution,
-          16*Math.pow(1-marker.t,10)*pulseResolution,
+          10*Math.pow(1-Math.abs(marker.t-(0+Math.min(marker.value*0.00001,0.04))),10)*pulseResolution,
           0, 2*Math.PI
         )
       }
@@ -377,16 +381,16 @@ const start = () => {
 
       for(let i=0; i< markers.length; i++){
         let marker = markers[i]
-        var pulseT = Math.min(1,marker.t*5)
+        var pulseT = Math.max(0, Math.min(1,marker.t*6)-(0.01+Math.min(0.13, marker.value*0.00001)))
 
-        if(pulseT < 1) {
+        if(pulseT < 0.5) {
           // var pulseScale = Math.log10(Math.max(1, marker.value/200))+1
           var pulseScale = Math.log10(Math.max(1, marker.value/200))+1
-          var initialPulseSize = 70*pulseScale
+          var initialPulseSize = 55*pulseScale
           var pulseSize = initialPulseSize*Math.pow(pulseT,1/2)
           // pulseContext.globalAlpha = Math.pow(1-pulseT,1/4)*0.4
           // pulseContext.lineWidth = pulseSize*2*Math.pow(1-pulseT, 8) * pulseResolution
-          pulseContext.lineWidth = pulseSize*1*Math.pow(1-pulseT, 8) * pulseResolution
+          pulseContext.lineWidth = (pulseSize*0.7)*1*Math.pow(1-pulseT, 8) * pulseResolution
           // var lineWidth = pulseSize*2*Math.pow(1-pulseT, 8) * pulseResolution
           // pulseContext.strokeStyle = markerColor
 
@@ -668,30 +672,36 @@ const start = () => {
             //   image.speedIncrease += 0.05
             // })
             var maskedImage = maskImage(image, 100)
-            images.push({
-              image: maskedImage,
-              t: 0,
-              direction: -Math.PI/2, // + (-variation + Math.random()*variation*2),
-              // oscilationFreq: Math.random(),
-              // oscilationAmp: Math.random(),
-              oscilationFreq: Math.random(),
-              oscilationAmp: -1+(Math.random()*2),
-              sourceX: sourceX,
-              sourceY: sourceY,
-              scale: Math.random(),
-              origin: 1,
-              speedIncrease: 0,
-              gravityIncrease: Math.random(),
-            })
-            resolve()
+            setTimeout(() => {
+              images.push({
+                image: maskedImage,
+                t: 0,
+                direction: -Math.PI/2, // + (-variation + Math.random()*variation*2),
+                // oscilationFreq: Math.random(),
+                // oscilationAmp: Math.random(),
+                oscilationFreq: Math.random(),
+                oscilationAmp: -1+(Math.random()*2),
+                sourceX: sourceX,
+                sourceY: sourceY,
+                scale: Math.random(),
+                origin: 1,
+                speedIncrease: 0,
+                gravityIncrease: Math.random(),
+              })
+              resolve()
+            }, Math.random()*1000)
           }).catch(()=>{
-            addDummyImage(sourceX, sourceY)
-            resolve()
+            setTimeout(() => {
+              addDummyImage(sourceX, sourceY)
+              resolve()
+            }, Math.random()*1000)
           })
         })
         .catch(function handleError() {
-          addDummyImage(sourceX, sourceY)
-          resolve()
+          setTimeout(() => {
+            addDummyImage(sourceX, sourceY)
+            resolve()
+          }, Math.random()*1000)
         })
     })
   }
@@ -700,9 +710,9 @@ const start = () => {
 
   attempt()
 
-  // setInterval(function reloadWindow() {
-  //   window.location.reload(false);
-  // }, 900000);
+  setInterval(function reloadWindow() {
+    window.location.reload(false);
+  }, 900000);
 }
 
 export {
