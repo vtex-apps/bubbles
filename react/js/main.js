@@ -101,20 +101,21 @@ const start = () => {
   // Hardcoded rates for currency conversion. We don't need the most updated and precise numbers,
   //   just a slight idea of proportions.
   var conversionRates = {
-    'ARS': 0.10,
+    'ARS': 0.055,
     'BRL': 1,
-    'CLP': 0.0055,
-    'COP': 0.0012,
-    'MXN': 0.18,
-    'PEN': 1.01,
-    'PYG': 0.00065,
-    'RON': 0.87,
-    'USD': 3.81,
-    'UYU': 0.12,
-    'EUR': 4.34,
-    'CRC': 0.0064,
-    'BOB': 0.55,
-    'GTQ': 0.50,
+    'CLP': 0.0068,
+    'COP': 0.0014,
+    'MXN': 0.26,
+    'PEN': 1.38,
+    'PYG': 0.00082,
+    'RON': 1.26,
+    'USD': 5.57,
+    'CAD': 4.40,
+    'UYU': 0.13,
+    'EUR': 6.24,
+    'CRC': 0.0087,
+    'BOB': 0.81,
+    'GTQ': 0.72,
   };
 
   function attempt() {
@@ -345,7 +346,7 @@ const start = () => {
 
       var overlay = new DayNightOverlay()
       overlay.onAdd()
-      overlay.draw(mapContext, mapWidth, mapHeight+300)
+      overlay.draw(mapContext, mapWidth, mapHeight+390)
       mapContext.clip()
       mapContext.drawImage(nightMapImage, 0, 0)
 
@@ -360,7 +361,7 @@ const start = () => {
 
       bordersMapContext.save()
 
-      overlay.draw(bordersMapContext, mapWidth, mapHeight+300)
+      overlay.draw(bordersMapContext, mapWidth, mapHeight+390)
       bordersMapContext.clip()
       bordersMapContext.drawImage(nightBordersMapImage, 0, 0)
     })
@@ -407,16 +408,23 @@ const start = () => {
 
       for(let i=0; i< markers.length; i++){
         let marker = markers[i]
-        var pulseT = Math.max(0, Math.min(1,marker.t*6)-(0.01+Math.min(0.13, marker.value*0.00001)))
+        var pulseT = Math.max(0, Math.min(1,marker.t*8)-(0.01+Math.min(0.13, marker.value*0.00001)))
 
         if(pulseT < 0.5) {
           // var pulseScale = Math.log10(Math.max(1, marker.value/200))+1
           var pulseScale = Math.log10(Math.max(1, marker.value/200))+1
+
           var initialPulseSize = 55*pulseScale
+          // var initialPulseSize = 55*pulseScale
+
           var pulseSize = initialPulseSize*Math.pow(pulseT,1/2)
           // pulseContext.globalAlpha = Math.pow(1-pulseT,1/4)*0.4
           // pulseContext.lineWidth = pulseSize*2*Math.pow(1-pulseT, 8) * pulseResolution
-          pulseContext.lineWidth = (pulseSize*1.3)*1*Math.pow(1-pulseT, 8) * pulseResolution
+
+          // pulseContext.lineWidth = (pulseSize*1.3)*1*Math.pow(1-pulseT, 8) * pulseResolution
+
+          pulseContext.lineWidth = (pulseSize*2)*1*Math.pow(1-pulseT, 8) * pulseResolution
+
           // var lineWidth = pulseSize*2*Math.pow(1-pulseT, 8) * pulseResolution
           // pulseContext.strokeStyle = markerColor
 
@@ -517,7 +525,7 @@ const start = () => {
       }
       for(i = images.length-1; i >= 0; i--){
         let image = images[i]
-        if(image.y < 0) {
+        if(image.y < -100) {
           image.image = null
           images.splice(i, 1)
         }
