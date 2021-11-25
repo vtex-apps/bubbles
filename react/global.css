@@ -43,8 +43,13 @@ a[href^="https://maps.google.com/maps"]{display:none !important}
   z-index: 9999;
   bottom: 10px;
   left: 15px;
-  width: 320px;
-  opacity: .5;
+  width: 250px;
+  /* opacity: .5; */
+}
+
+#stats {
+  z-index: 9999;
+  display: none;
 }
 
 .image {
@@ -186,12 +191,17 @@ a[href^="https://maps.google.com/maps"]{display:none !important}
 #overlay,
 #image-gallery,
 #map,
+#map-borders,
 #heatmap {
   position: absolute;
   top: 0;
   left: 0;
   z-index: 999;
   pointer-events:none;
+}
+
+#overlay {
+  /* mix-blend-mode: lighten; */
 }
 
 #heatmap{

@@ -16,7 +16,7 @@ export default class Bubbles extends Component {
       setTimeout(() => {
         //@ts-ignore
         document.querySelector('.reset').style.display = 'none'
-      }, 10*1000)
+      }, 5*1000)
     }
   }
 
@@ -101,20 +101,20 @@ export default class Bubbles extends Component {
         <Helmet>
           <title>VTEX Order Map</title>
           <link rel="shortcut icon" href="https://io.vtex.com.br/favico/1.3.0/favico.ico"></link>
-
-          <meta name="google-signin-client_id"
-            content="388920801697-jo8o228hlp7k5ifqhosum7tqml2br3kh.apps.googleusercontent.com" />
-          <script src="https://apis.google.com/js/platform.js" async defer></script>
+          <script src="https://io.vtex.com.br/front-libs/jquery/2.0.3/jquery-2.0.3.min.js"></script>
+          <script src="https://vtexid.vtex.com.br/api/vtexid/pub/authentication/vtexid.min.js"></script>
         </Helmet>
         <div className="container" id="container" style={{ background: '#142032' }}>
           <canvas id="map"></canvas>
           {/* <canvas id="heatmap"></canvas> */}
           <canvas id="overlay"></canvas>
+          <canvas id="map-borders"></canvas>
           <canvas id="image-gallery"></canvas>
           <a href="https://en.vtex.com/" rel="noopener noreferrer" target="_blank">
             <img src={`${IMAGE_ROOT}/vtex-logo.svg`} className="logovtex" alt="Logo VTEX"/>
           </a>
         </div>
+        <div id="stats"></div>
         <button onClick={this.handleLogin} className="login">Login</button>
         <button onClick={this.handleReset} className="reset">Reset Token</button>
         <div className="loading">Connecting...</div>

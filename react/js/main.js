@@ -1,4 +1,8 @@
 import axios from 'axios'
+import Stats from 'stats.js'
+
+const stats = new Stats()
+stats.showPanel(0)
 
 const isLinked = window && window.location && window.location.hostname.match('myvtex.com')
 
@@ -23,7 +27,7 @@ const start = () => {
   var pendingMarkers = 0
   var pulseCanvas = document.querySelector('#overlay')
   var pulseContext = pulseCanvas.getContext('2d')
-  var pulseResolution = 0.5
+  var pulseResolution = 1
   // var heatmapCanvas = document.querySelector('#heatmap')
   // var heatmapContext = heatmapCanvas.getContext('2d')
   var galleryCanvas = document.querySelector('#image-gallery')
@@ -31,14 +35,21 @@ const start = () => {
   var galleryResolution = 0.8
   var mapCanvas = document.querySelector('#map')
   var mapContext = mapCanvas.getContext('2d')
+  var bordersMapCanvas = document.querySelector('#map-borders')
+  var bordersMapContext = bordersMapCanvas.getContext('2d')
   var dayMapURL = `${IMAGE_ROOT}/world-map-2.svg`
   var nightMapURL = `${IMAGE_ROOT}/world-map-2-night.svg`
+  var bordersMapURL = `${IMAGE_ROOT}/world-map-2-borders.svg`
+  var nightBordersMapURL = `${IMAGE_ROOT}/world-map-2-night-borders.svg`
   var fps = 60
   var frame = 1000 / fps
   var errorCount = 0
+  const imagesLimit = 200
 
   var dayMapImage
   var nightMapImage
+  var bordersMapImage
+  var nightBordersMapImage
 
   // size of the map image
   var mapWidth = 1009
@@ -83,6 +94,7 @@ const start = () => {
     }
   }
 
+  document.querySelector('#stats').appendChild(stats.dom)
   // AQUI
   // document.querySelector("#world-map").style.transform = "scale("+mapScale+") translate3d("+mapOffset.x+"px, "+mapOffset.y+"px, 0)"
 
@@ -196,7 +208,7 @@ const start = () => {
       if (initial) {
         setTimeout(() => {
           document.querySelector('.valid').style.display='none'
-        }, 10 * 1000)
+        }, 5 * 1000)
       }
     }
 
@@ -295,6 +307,8 @@ const start = () => {
 
     dayMapImage = new Image()
     nightMapImage = new Image()
+    bordersMapImage = new Image()
+    nightBordersMapImage = new Image()
     Promise.all([
       new Promise(function(resolve) {
         dayMapImage.addEventListener('load', function() {
@@ -304,6 +318,16 @@ const start = () => {
       new Promise(function(resolve) {
         nightMapImage.addEventListener('load', function() {
           resolve(nightMapImage)
+        })
+      }),
+      new Promise(function(resolve) {
+        bordersMapImage.addEventListener('load', function() {
+          resolve(bordersMapImage)
+        })
+      }),
+      new Promise(function(resolve) {
+        nightBordersMapImage.addEventListener('load', function() {
+          resolve(nightBordersMapImage)
         })
       }),
     ]).then(function(){
@@ -318,15 +342,32 @@ const start = () => {
       mapContext.drawImage(dayMapImage, 0, 0)
 
       mapContext.save()
+
       var overlay = new DayNightOverlay()
       overlay.onAdd()
       overlay.draw(mapContext, mapWidth, mapHeight+300)
       mapContext.clip()
       mapContext.drawImage(nightMapImage, 0, 0)
 
+      bordersMapCanvas.setAttribute('width', window.innerWidth)
+      bordersMapCanvas.setAttribute('height', window.innerHeight)
+
+      bordersMapContext.save()
+
+      bordersMapContext.scale(mapScale, mapScale)
+      bordersMapContext.translate(mapOffset.x, mapOffset.y)
+      bordersMapContext.drawImage(bordersMapImage, 0, 0)
+
+      bordersMapContext.save()
+
+      overlay.draw(bordersMapContext, mapWidth, mapHeight+300)
+      bordersMapContext.clip()
+      bordersMapContext.drawImage(nightBordersMapImage, 0, 0)
     })
     dayMapImage.src = dayMapURL
     nightMapImage.src = nightMapURL
+    bordersMapImage.src = bordersMapURL
+    nightBordersMapImage.src = nightBordersMapURL
 
     initCanvas()
   }
@@ -346,6 +387,7 @@ const start = () => {
 
     var markerSpeed = 0.002
     var markerColor = '#F71963'
+    var highlightMarkerColor = '#ffc4dd'
 
     var imageSpeed = 0.0025
 
@@ -361,23 +403,6 @@ const start = () => {
     function update(delta) {
       pulseContext.clearRect(0,0, window.innerWidth*pulseResolution, window.innerHeight*pulseResolution)
 
-      pulseContext.fillStyle = markerColor
-
-      pulseContext.globalAlpha = 1
-      pulseContext.beginPath()
-      for(let i=0; i< markers.length; i++){
-        let marker = markers[i]
-        if(marker.t >= 1) continue
-
-        pulseContext.moveTo(marker.x*pulseResolution, marker.y*pulseResolution)
-        pulseContext.arc(
-          marker.x*pulseResolution, marker.y*pulseResolution,
-          10*Math.pow(1-Math.abs(marker.t-(0+Math.min(marker.value*0.00001,0.04))),10)*pulseResolution,
-          0, 2*Math.PI
-        )
-      }
-      pulseContext.fill()
-
       pulseContext.strokeStyle = markerColor
 
       for(let i=0; i< markers.length; i++){
@@ -391,7 +416,7 @@ const start = () => {
           var pulseSize = initialPulseSize*Math.pow(pulseT,1/2)
           // pulseContext.globalAlpha = Math.pow(1-pulseT,1/4)*0.4
           // pulseContext.lineWidth = pulseSize*2*Math.pow(1-pulseT, 8) * pulseResolution
-          pulseContext.lineWidth = (pulseSize*0.7)*1*Math.pow(1-pulseT, 8) * pulseResolution
+          pulseContext.lineWidth = (pulseSize*1.3)*1*Math.pow(1-pulseT, 8) * pulseResolution
           // var lineWidth = pulseSize*2*Math.pow(1-pulseT, 8) * pulseResolution
           // pulseContext.strokeStyle = markerColor
 
@@ -401,10 +426,28 @@ const start = () => {
             pulseSize*pulseResolution,
             0, 2*Math.PI
           )
+          pulseContext.globalAlpha = 1
           pulseContext.stroke()
         }
         marker.t += markerSpeed*delta
       }
+
+      pulseContext.globalAlpha = 1
+      for(let i=0; i< markers.length; i++){
+        let marker = markers[i]
+        if(marker.t >= 1) continue
+
+        pulseContext.beginPath()
+        pulseContext.fillStyle = marker.t < 0.01 ? highlightMarkerColor : markerColor
+        pulseContext.moveTo(marker.x*pulseResolution, marker.y*pulseResolution)
+        pulseContext.arc(
+          marker.x*pulseResolution, marker.y*pulseResolution,
+          10*Math.pow(1-Math.abs(marker.t-(0+Math.min(marker.value*0.00001,0.02))),30)*pulseResolution,
+          0, 2*Math.PI
+        )
+        pulseContext.fill()
+      }
+      pulseContext.globalAlpha = 1
 
       galleryContext.clearRect(0, 0, window.innerWidth*galleryResolution, window.innerHeight*galleryResolution)
       for(let i =0; i<images.length; i++){
@@ -428,6 +471,7 @@ const start = () => {
           x: origin.x+(Math.cos(image.direction)*offset)+oscilation+gravity.x,
           y: origin.y+(Math.sin(image.direction)*offset)+gravity.y,
         }
+        image.y = targetPos.y
 
         galleryContext.drawImage(
           image.image,
@@ -449,6 +493,7 @@ const start = () => {
     }
     let shouldUpdate = true
     function updateAgain(t){
+      stats.begin()
       if(!start) start = t
       shouldUpdate = !shouldUpdate
       if(!shouldUpdate){
@@ -458,6 +503,7 @@ const start = () => {
       var delta = (t - start)/frame
       start = t
       update(delta)
+      stats.end()
     }
     updateAgain(performance.now())
 
@@ -469,13 +515,13 @@ const start = () => {
           markers.splice(i, 1)
         }
       }
-      // for(i = images.length-1; i >= 0; i--){
-      //   let image = images[i]
-      //   if(image.t >= 1) {
-      //     image.image = null
-      //     images.splice(i, 1)
-      //   }
-      // }
+      for(i = images.length-1; i >= 0; i--){
+        let image = images[i]
+        if(image.y < 0) {
+          image.image = null
+          images.splice(i, 1)
+        }
+      }
     }, 1000)
   }
 
@@ -518,31 +564,44 @@ const start = () => {
       var pos = latLngToPoint(data.lat, data.long, mapWidth*mapScale, mapHeight*mapScale)
       pos.x += (-30*mapScale)+(mapOffset.x*mapScale)
       pos.y += (130*mapScale)+(mapOffset.y*mapScale)
-      showImage(data.accountName, data.salesChannel, data.sku, pos.x, pos.y)
-        .then(function(){
-          let value = 1
-          if (conversionRates[data.transactionCurrency]) {
-            value = data.transactionTotal * conversionRates[data.transactionCurrency];
-          } else {
-            console.warn('Missing conversion rate for ' + data.transactionCurrency);
-          }
 
-          var variation = 3
-          pos.x += -variation + (Math.random() * variation * 2)
-          pos.y += -variation + (Math.random() * variation * 2)
+      const st = 1
+      for (let i = 0; i<st; i++) {
+        setTimeout(() => {
+          showImage(data.accountName, data.salesChannel, data.sku, pos.x, pos.y)
+            .then(function(){
+              let value = 1
+              if (conversionRates[data.transactionCurrency]) {
+                value = data.transactionTotal * conversionRates[data.transactionCurrency];
+              } else {
+                console.warn('Missing conversion rate for ' + data.transactionCurrency);
+              }
 
-          markers.push({
-            x: pos.x,
-            y: pos.y,
-            t: 0,
-            value: value,
-          })
+              var variation = 3
+              pos.x += -variation + (Math.random() * variation * 2)
+              pos.y += -variation + (Math.random() * variation * 2)
 
-          // addHeatMapPoint(pos.x, pos.y)
-        })
+              markers.push({
+                x: pos.x+(i>0 ? Math.random()*10 : 0),
+                y: pos.y+(i>0 ? Math.random()*10 : 0),
+                t: 0,
+                value: value,
+              })
+
+              // addHeatMapPoint(pos.x, pos.y)
+            })
+        }, (2000/st)*i)
+      }
     }
   }
 
+  let statsVisible = false
+  document.addEventListener('keydown', event => {
+    if (event.key === 'f') {
+      statsVisible = !statsVisible
+      document.querySelector('#stats').style.display = statsVisible ? 'block' : 'none'
+    }
+  })
   var pending = 0
 
   async function getImageUrl(an, sc, skuId) {
@@ -645,6 +704,9 @@ const start = () => {
   }
 
   function addDummyImage(sourceX, sourceY){
+    if (images.length >= imagesLimit) {
+      return
+    }
     images.unshift({
       image: maskImage(null, 100),
       t: 0,
@@ -713,7 +775,7 @@ const start = () => {
 
   setInterval(function reloadWindow() {
     window.location.reload(false);
-  }, 900000);
+  }, 10 * 60 * 1000);
 }
 
 export {
